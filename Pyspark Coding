@@ -1,0 +1,40 @@
+Pyspark Coding
+
+##Run the HDFS command in your Hadoop terminal before entering Pyspark & Verify its uploaded 
+hdfs dfs -put train.csv /user/hadoop/ 
+
+hdfs dfs -ls /user/hadoop/ 
+
+##Enter Pyspark 
+pyspark 
+
+##Load CSV into Spark 
+from pyspark.sql import SparkSession 
+
+from pyspark.sql.functions import col, lower, when 
+
+  
+
+spark = SparkSession.builder.appName("SentimentAnalysis").getOrCreate() 
+
+  
+
+# Load CSV with header 
+
+df = spark.read.csv("train.csv", header=True) 
+
+  
+
+df.show(5) 
+
+##Apply Sentiment Logic
+from functools import reduce from pyspark.sql import functions as F 
+
+#Count matches for each category 
+
+pos_expr = reduce(lambda a, b: a + b, [F.lower(col("review_text")).contains(w).cast("int") for w in positive_words]) neg_expr = reduce(lambda a, b: a + b, [F.lower(col("review_text")).contains(w).cast("int") for w in negative_words]) 
+
+df = df.withColumn( "sentiment", when(pos_expr > neg_expr, "positive") .when(neg_expr > pos_expr, "negative") .otherwise("neutral") ) 
+
+##Show total results of the Sentiment Analysis (Positive/Neutral/Negative) 
+df.groupBy("sentiment").count().show() 
